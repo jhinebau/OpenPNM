@@ -48,7 +48,7 @@ pn.regenerate_physics()
 OP_1 = OpenPNM.Algorithms.OrdinaryPercolation(loglevel=20,network=pn)
 a = pn.pores(labels=['bottom','boundary'],mode='intersection')
 OP_1.setup(invading_fluid=water,defending_fluid=air,inlets=a,npts=20)
-#OP_1.run()
+OP_1.run()
 #OP_1.plot_drainage_curve()
 
 #------------------------------------------------------------------------------
