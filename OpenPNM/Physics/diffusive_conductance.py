@@ -17,7 +17,7 @@ def constant(physics,
     r"""
     Assigns specified constant value
     """
-    network.set_throat_data(phase=fluid,prop=propname,data=value,locations=geometry)
+    fluid.set_data(prop=propname,throats=geometry.throats(),data=value)
 
 def na(physics,
        network,
@@ -28,7 +28,7 @@ def na(physics,
     r"""
     """
     value = -1
-    network.set_throat_data(phase=fluid,prop=propname,data=value,locations=geometry)
+    fluid.set_data(prop=propname,throats=geometry.throats(),data=value)
 
 def bulk_diffusion(physics,
                    network,
@@ -58,27 +58,24 @@ def bulk_diffusion(physics,
     calculated.
 
     """    
-    #Get fluid properties
-    cp = network.get_pore_data(phase=fluid,prop=molar_density)
-    DABp = network.get_pore_data(phase=fluid,prop=diffusivity)
-    #Interpolate pore values to throats
-    ct = network.interpolate_throat_data(cp)
-    DABt = network.interpolate_throat_data(DABp)
+    #Interpolate pore fluid property values to throats
+    ct = fluid.get_data(prop='molar_density',throats='all',mode='interpolate')
+    DABt = fluid.get_data(prop='diffusivity',throats='all',mode='interpolate')
     #Get Nt-by-2 list of pores connected to each throat
-    tind = network.get_throat_indices()
-    pores = network.find_connected_pores(tind,flatten=0)
+    Ts= network.get_throat_indices()
+    Ps = network.find_connected_pores(Ts,flatten=0)
     #Find g for half of pore 1
-    pdia = network.get_pore_data(prop=pore_diameter)
-    gp1 = ct*DABt*pdia[pores[:,0]]**2/(0.5*pdia[pores[:,0]])
+    pdia = network.get_data(prop=pore_diameter,pores='all')
+    gp1 = ct*DABt*pdia[Ps[:,0]]**2/(0.5*pdia[Ps[:,0]])
     gp1[~(gp1>0)] = sp.inf #Set 0 conductance pores (boundaries) to inf
     #Find g for half of pore 2
-    gp2 = ct*DABt*pdia[pores[:,1]]**2/(0.5*pdia[pores[:,1]])
+    gp2 = ct*DABt*pdia[Ps[:,1]]**2/(0.5*pdia[Ps[:,1]])
     gp2[~(gp2>0)] = sp.inf #Set 0 conductance pores (boundaries) to inf
     #Find g for full throat
-    tdia = network.get_throat_data(prop=throat_diameter)
-    tlen = network.get_throat_data(prop=throat_length)
+    tdia = network.get_data(prop=throat_diameter,throats='all')
+    tlen = network.get_data(prop=throat_length,throats='all')
     gt = ct*DABt*tdia**2/tlen
     value = (1/gt + 1/gp1 + 1/gp2)**(-1)
-    mask = network.get_throat_indices(geometry)
-    network.set_throat_data(phase=fluid,prop=propname,data=value[mask],locations=geometry)
+    value = value[geometry.throats()]
+    fluid.set_data(prop=propname,throats=geometry.throats(),data=value)
 

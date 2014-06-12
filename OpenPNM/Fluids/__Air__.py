@@ -24,15 +24,15 @@ class Air(GenericFluid):
     >>> pn = OpenPNM.Network.TestNet()
     >>> air = OpenPNM.Fluids.Air(network=pn)
     """
-    def __init__(self,name='air',**kwargs):
+    def __init__(self,name=None,**kwargs):
         super(Air,self).__init__(name=name,**kwargs)
         self._logger.debug("Construct class")
         self.set_pore_data(prop='Tc',data=132.65)
         self.set_pore_data(prop='Pc',data=3.771e6)
         self.set_pore_data(prop='MW',data=0.0291)
-        self.add_method(prop='diffusivity',model='Fuller',MA=0.03199,MB=0.0291,vA=16.3,vB=19.7)
-        self.add_method(prop='viscosity',model='constant',value=1.9e-5)
-        self.add_method(prop='molar_density',model='ideal_gas',R=8.314)
+        self.add_property(prop='diffusivity',model='Fuller',MA=0.03199,MB=0.0291,vA=16.3,vB=19.7)
+        self.add_property(prop='viscosity',model='constant',value=1.9e-5)
+        self.add_property(prop='molar_density',model='ideal_gas',R=8.314)
         self.regenerate()
 
 if __name__ =="__main__":

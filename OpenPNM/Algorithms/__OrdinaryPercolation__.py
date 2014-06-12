@@ -55,10 +55,8 @@ class OrdinaryPercolation(GenericAlgorithm):
               AL=True,
               **params):
         # Parse params
-        try: self._fluid_inv
-        except: self._fluid_inv = invading_fluid
-        try: self._fluid_def
-        except: self._fluid_def = defending_fluid
+        self._fluid_inv = invading_fluid
+        self._fluid_def = defending_fluid
         try: self._inv_sites
         except: self._inv_sites = inlets
         self._npts = npts
@@ -69,14 +67,14 @@ class OrdinaryPercolation(GenericAlgorithm):
         #See if setup has been run
         try: capillary_pressure = self._p_cap
         except: 
-            raise Exception('setup has not been run, cannot proceed!')
-        #Create a pore and throat conditions list to store inv_val at which each is invaded
+            raise Exception('setup has not been run, cannot proceed')
+        #Create pore and throat conditions lists to store inv_val at which each is invaded
         self._p_inv = sp.zeros((self._net.num_pores(),))
         self._p_seq = sp.zeros_like(self._p_inv)
         self._t_inv = sp.zeros((self._net.num_throats(),))
         self._t_seq = sp.zeros_like(self._t_inv)
         #Determine the invasion pressures to apply
-        self._t_cap = self._net.get_throat_data(phase=self._fluid_inv,prop=capillary_pressure)
+        self._t_cap = self._fluid_inv.get_throat_data(prop=capillary_pressure)
         min_p = sp.amin(self._t_cap)*0.98  # nudge min_p down slightly
         max_p = sp.amax(self._t_cap)*1.02  # bump max_p up slightly
         self._inv_points = sp.logspace(sp.log10(min_p),sp.log10(max_p),self._npts)
@@ -97,7 +95,7 @@ class OrdinaryPercolation(GenericAlgorithm):
         self.set_pore_data(prop='inv_seq',data=self._p_seq)
         self.set_throat_data(prop='inv_seq',data=self._t_seq)
         #Remove temporary arrays and adjacency matrices
-        del self._net.adjacency_matrix['csr']['invaded']
+        del self._net._adjacency_matrix['csr']['invaded']
 
     def _do_one_inner_iteration(self,inv_val):
         r"""
@@ -110,7 +108,7 @@ class OrdinaryPercolation(GenericAlgorithm):
         Tinvaded = self._t_cap<=inv_val
         #Fill adjacency matrix with invasion state info
         self._net.create_adjacency_matrix(data=Tinvaded,prop='invaded',sprsfmt='csr',dropzeros=True)
-        clusters = sprs.csgraph.connected_components(self._net.adjacency_matrix['csr']['invaded'])[1]
+        clusters = sprs.csgraph.connected_components(self._net._adjacency_matrix['csr']['invaded'])[1]
         #Find all pores with at least 1 invaded throat (invaded)
         Pinvaded = sp.zeros_like(clusters,dtype=bool)
         nums = self._net.get_throat_indices('all')
@@ -135,7 +133,7 @@ class OrdinaryPercolation(GenericAlgorithm):
         #Store result of invasion step
         self._p_inv[(self._p_inv==0)*(pmask)] = inv_val
         #Determine Pc_invaded for throats as well
-        temp = self._net.get_throat_data(prop='connections')
+        temp = self._net.get_throat_data(prop='conns')
         tmask = (pmask[temp[:,0]] + pmask[temp[:,1]])*(Tinvaded)
         self._t_inv[(self._t_inv==0)*(tmask)] = inv_val
 
@@ -166,8 +164,9 @@ class OrdinaryPercolation(GenericAlgorithm):
             Cstate = sp.sum(Pinvaded[conns], axis=1)
             Tinvaded = self._t_inv <= inv_val
             Cstate = Cstate + Tinvaded #0 = all open, 1=1 pore filled, 2=2 pores filled 3=2 pores + 1 throat filled
-            self._net.create_adjacency_matrix(data=(Cstate == 0), prop='defended', sprsfmt='csr', dropzeros=True)
-            clusters = sprs.csgraph.connected_components(self._net.adjacency_matrix['csr']['defended'])[1]
+#            self._net.create_adjacency_matrix(data=(Cstate == 0), prop='defended', sprsfmt='csr', dropzeros=True)
+#            clusters = sprs.csgraph.connected_components(self._net.adjacency_matrix['csr']['defended'])[1]
+            clusters = self._net.find_clusters(Cstate==0)
             ##Clean up clusters (invaded = -1, defended >=0)
             clusters = clusters*(~Pinvaded) - (Pinvaded)
             #Identify clusters connected to outlet sites
@@ -191,22 +190,22 @@ class OrdinaryPercolation(GenericAlgorithm):
         """
         #Apply occupancy to invading fluid
         p_inv = self.get_pore_data(prop='inv_Pc')
-        self._net.set_pore_data(phase=self._fluid_inv,prop='inv_Pc',data=p_inv)
+        self._fluid_inv.set_pore_data(prop='inv_Pc',data=p_inv)
         t_inv = self.get_throat_data(prop='inv_Pc')
-        self.set_throat_data(phase=self._fluid_inv,prop='inv_Pc',data=t_inv)
+        self._fluid_inv.set_throat_data(prop='inv_Pc',data=t_inv)
         #Find invasion sequence values (to correspond with IP algorithm)
         p_seq = self.get_pore_data(prop='inv_seq')
-        self._net.set_pore_data(phase=self._fluid_inv,prop='inv_seq',data=p_seq)
+        self._fluid_inv.set_pore_data(prop='inv_seq',data=p_seq)
         t_seq = self.get_throat_data(prop='inv_seq')
-        self._net.set_throat_data(phase=self._fluid_inv,prop='inv_seq',data=t_seq)
+        self._fluid_inv.set_throat_data(prop='inv_seq',data=t_seq)
         #Remove temporary arrays and adjacency matrices
         p_inv = self.get_pore_data(prop='inv_Pc')<=Pc
         t_inv = self.get_throat_data(prop='inv_Pc')<=Pc
-        self._net.set_pore_data(phase=self._fluid_inv,prop=occupancy,data=p_inv)
-        self._net.set_throat_data(phase=self._fluid_inv,prop=occupancy,data=t_inv)
+        self._fluid_inv.set_pore_data(prop=occupancy,data=p_inv)
+        self._fluid_inv.set_throat_data(prop=occupancy,data=t_inv)
         #Apply occupancy to defending fluid
-        self._net.set_pore_data(phase=self._fluid_def,prop=occupancy,data=~p_inv)
-        self._net.set_throat_data(phase=self._fluid_def,prop=occupancy,data=~t_inv)
+        self._fluid_def.set_pore_data(prop=occupancy,data=~p_inv)
+        self._fluid_def.set_throat_data(prop=occupancy,data=~t_inv)
 
     def plot_drainage_curve(self,
                             pore_volume='volume',

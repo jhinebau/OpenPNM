@@ -16,9 +16,7 @@ from functools import partial
 
 class GenericGeometry(OpenPNM.Utilities.Base):
     r"""
-    GenericGeometry - Base class to construct pore networks
-
-    This class contains the interface definition for the construction of networks
+    GenericGeometry - Base class to construct a Geometry object
 
     Parameters
     ----------
@@ -27,11 +25,6 @@ class GenericGeometry(OpenPNM.Utilities.Base):
     name : string
         A unique name to apply to the object.  This name will also be used as a
         label to identify where this this geometry applies.
-        
-    pnums and tnums : boolean mask or list of indices
-        The pore (pnums) and throat (tnums) locations in the network where this 
-        geometry applies.  By default it will apply everywhere.  To create an 
-        empty geometry set pnums and tnums to empty lists [].  
     
     loglevel : int
         Level of the logger (10=Debug, 20=Info, 30=Warning, 40=Error, 50=Critical)
@@ -42,32 +35,69 @@ class GenericGeometry(OpenPNM.Utilities.Base):
     Examples
     --------
     >>> pn = OpenPNM.Network.TestNet()
-    >>> loc = pn.get_pore_indices() #Get all pores to define geometry everywhere
-    >>> geo = OpenPNM.Geometry.GenericGeometry(name='geo_test',locations=loc,network=pn)
+    >>> loc = pn.pores() #Get all pores to define geometry everywhere
+    >>> geo = OpenPNM.Geometry.GenericGeometry(network=pn)
+    >>> geo.set_locations(pores=loc)
     >>> geo.add_method(prop='pore_seed',model='constant',value=0.123)
     >>> geo.regenerate()
-    >>> seeds = pn.get_pore_data(locations='geo_test',prop='seed')
+    >>> seeds = pn.get_pore_data(locations=geo.name,prop='seed')
     >>> seeds[0]
     0.123
     """
 
-    def __init__(self, network,name,pnums='all',tnums='all',**kwargs):
+    def __init__(self,network,name=None,**kwargs):
         r"""
         Initialize
         """
         super(GenericGeometry,self).__init__(**kwargs)
         self._logger.debug("Method: Constructor")
-        for item in network._geometry:
-            if item.name == name:
-                raise Exception('A Geometry Object with the supplied name already exists')
-        network.set_pore_info(label=name,locations=pnums)
-        network.set_throat_info(label=name,locations=tnums)
-        network._geometry.append(self) #attach geometry to network
+        self._net = network #Attach network to self        
         self.name = name
-        self._net = network #Attach network to self
+        #Setup containers for object linking
         self._physics = [] #Create list for physics to append themselves to
+        self._net._geometries.append(self)
         self._prop_list = []
-              
+        
+        #Initialize geometry to NOWHERE
+        network.set_info(label=self.name,pores=[])
+        network.set_info(label=self.name,throats=[])
+        self.num_pores = partial(network.num_pores,labels=self.name)
+        self.num_throats = partial(network.num_throats,labels=self.name)
+    
+    def set_locations(self,pores=[],throats=[],mode='add'):
+        r'''
+        Assign Geometry object to specifed pores (or throats)
+        '''
+        if pores != []:
+            if pores == 'all':
+                pores = self._net.pores(labels='all')
+            if mode == 'add':
+                self._net.set_info(label=self.name,pores=pores,mode='merge')
+            elif mode == 'remove':
+                self._net.set_info(label=self.name,pores=pores,mode='remove')
+            else:
+                print('invalid mode received')
+        
+        if throats != []:
+            if throats == 'all':
+                throats = self._net.get_throat_indices(labels='all')
+            if mode == 'add':
+                self._net.set_info(label=self.name,throats=throats,mode='merge')
+            elif mode == 'remove':
+                self._net.set_info(label=self.name,throats=throats,mode='remove')
+            else:
+                print('invalid mode received')
+        
+    def pores(self):
+        r'''
+        '''
+        return self._net.pores(labels=self.name)
+        
+    def throats(self):
+        r'''
+        '''
+        return self._net.throats(labels=self.name)
+    
     def regenerate(self, prop_list='',mode=None):
         r'''
         This updates all properties using the selected methods
@@ -82,8 +112,8 @@ class GenericGeometry(OpenPNM.Utilities.Base):
         Examples
         --------
         >>> pn = OpenPNM.Network.TestNet()
-        >>> pind = pn.get_pore_indices()
-        >>> geom = OpenPNM.Geometry.Stick_and_Ball(network=pn, name='geo_test', locations=pind)
+        >>> pind = pn.pores()
+        >>> geom = OpenPNM.Geometry.Stick_and_Ball(network=pn)
         >>> geom.regenerate()  # Regenerate all properties at once
         >>> geom.regenerate('pore_seed')  # only one property
         >>> geom.regenerate(['pore_seed', 'pore_diameter'])  # or several
@@ -103,6 +133,12 @@ class GenericGeometry(OpenPNM.Utilities.Base):
     
     def add_method(self,prop='',prop_name='',**kwargs):
         r'''
+        THIS METHOD IS DEPRECATED USE add_property() INSTEAD
+        '''
+        self.add_property(prop=prop,prop_name=prop_name,**kwargs)
+    
+    def add_property(self,prop='',prop_name='',**kwargs):
+        r'''
         Add specified property estimation model to the fluid object.
         
         Parameters
@@ -120,7 +156,7 @@ class GenericGeometry(OpenPNM.Utilities.Base):
         
         Examples
         --------
-        >>> pn = OpenPNM.Network.TestNet()
+        None yet
         '''
         try:
             function = getattr( getattr(OpenPNM.Geometry, prop), kwargs['model'] ) # this gets the method from the file
@@ -139,22 +175,23 @@ class GenericGeometry(OpenPNM.Utilities.Base):
 
     def check_consistency(self):
         r'''
-        Checks to see if the current geometry conflicts with any other geometry
+        Checks to see if the current geometry conflicts with other geometries, 
+        and ensures that geometries have been applied to all locations
         '''
         temp = sp.zeros_like(self._net.get_pore_info(label=self.name),dtype=int)
-        for item in self._net._geometry:
-            temp = temp + sp.array(self._net.get_pore_info(label=item.name),dtype=int)
+        for item in self._net._geometries:
+            temp = temp + sp.array(self._net.get_pore_info(label=item),dtype=int)
         print('Geometry labels overlap in', sp.sum(temp>1),'pores')
         print('Geometry not yet applied to',sp.sum(temp==0),'pores')
         
         temp = sp.zeros_like(self._net.get_throat_info(label=self.name),dtype=int)
-        for item in self._net._geometry:
-            temp = temp + sp.array(self._net.get_throat_info(label=item.name),dtype=int)
+        for item in self._net._geometries:
+            temp = temp + sp.array(self._net.get_throat_info(label=item),dtype=int)
         print('Geometry labels overlap in', sp.sum(temp>1),'throats')
         print('Geometry not yet applied to',sp.sum(temp==0),'throats')
 
 if __name__ == '__main__':
-    pn = OpenPNM.Network.TestNet()
-    loc = pn.get_pore_indices()
-    test = OpenPNM.Geometry.GenericGeometry(name='doc_test',locations=loc,network=pn)
+    #Run doc tests
+    import doctest
+    doctest.testmod(verbose=True)
 

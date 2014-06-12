@@ -24,7 +24,10 @@ class GenericPhysics(OpenPNM.Utilities.Base):
         The network to which this Physics should be attached
         
     fluid : OpenPNM Fluid object 
-        The Fluid object to which the Physics applies
+        The Fluid object to which this Physics applies
+        
+    geometry : OpenPNM Geometry object
+        The Geometry object to which this Physics applies
     
     name : str
         A unique string name to identify the Physics object, typically same as 
@@ -37,36 +40,28 @@ class GenericPhysics(OpenPNM.Utilities.Base):
         Sets a custom name for the logger, to help identify logger messages
 
     """
-    def __init__(self,network,name,fluid,geometry='all',**kwargs):
+
+    def __init__(self,network,fluid,geometry,name=None,**kwargs):
         super(GenericPhysics,self).__init__(**kwargs)
         self._logger.debug("Construct class")
-        for item in network._physics:
-            if item.name == name:
-                raise Exception('A Physics Object with the supplied name already exists')
-        self.name = name
+        
+        #Setup containers for ojecct linking
         self._prop_list = []
-        self._fluid = []
-        self._geometry = []
-        #bind objects togoether
-        try: fluid = fluid.name
-        except: pass
-        self._fluid.append(fluid)  # attach fluid to this physics
-        try: fluid = network.find_object_by_name(fluid) 
-        except: pass #Accept object               
-        fluid._physics.append(self) # attach this physics to fluid
-        if type(geometry)!= sp.ndarray and geometry=='all':
-            geometry = network._geometry
-        elif type(geometry)!= sp.ndarray: 
-            geometry = sp.array(geometry,ndmin=1)
-        for geom in geometry:
-            try: geom = geom.name
-            except: pass
-            self._geometry.append(geom)  # attach geometry to this physics
-            try: geom = network.find_object_by_name(geom) 
-            except: pass #Accept object               
-            geom._physics.append(self)  # attach this physics to geometry
-        self._net = network  # attach network to this physics
-        network._physics.append(self) #attach physics to network
+
+        # Append objects for internal access
+        self._net = network
+        self._fluid = fluid
+        self._geometry = geometry
+        
+        # Connect this physics with it's geometry
+        geometry._physics.append(self)
+        fluid._physics.append(self)
+
+        self.name = name
+
+        #Use composition to assign pores and throats to this physics
+        self.pores = geometry.pores()
+        self.throats = geometry.throats()
 
     def regenerate(self, prop_list='',mode=None):
         r'''
@@ -98,6 +93,12 @@ class GenericPhysics(OpenPNM.Utilities.Base):
             
     def add_method(self,prop='',prop_name='',**kwargs):
         r'''
+        THIS METHOD IS DEPRECATED USE add_property() INSTEAD
+        '''
+        self.add_property(prop=prop,prop_name=prop_name,**kwargs)
+            
+    def add_property(self,prop='',prop_name='',**kwargs):
+        r'''
         Add specified property estimation model to the physics object.
         
         Parameters
@@ -120,7 +121,7 @@ class GenericPhysics(OpenPNM.Utilities.Base):
         try:
             function = getattr( getattr(OpenPNM.Physics, prop), kwargs['model'] ) # this gets the method from the file
             if prop_name: prop = prop_name #overwrite the default prop with user supplied name  
-            preloaded_fn = partial(function, physics=self, network=self._net, propname=prop, fluid=self._fluid[0], geometry=self._geometry, **kwargs) #
+            preloaded_fn = partial(function, physics=self, network=self._net, propname=prop, fluid=self._fluid, geometry=self._geometry, **kwargs) #
             setattr(self, prop, preloaded_fn)
             self._logger.info("Successfully loaded {}.".format(prop))
             self._prop_list.append(prop)

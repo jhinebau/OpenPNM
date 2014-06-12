@@ -37,37 +37,48 @@ class GenericFluid(OpenPNM.Utilities.Tools):
         Sets a custom name for the logger, to help identify logger messages
 
     """
-    def __init__(self,network,name,**kwargs):
+    def __init__(self,network,name=None,**kwargs):
         super(GenericFluid,self).__init__(**kwargs)
         self._logger.debug("Construct class")
-        for item in network._fluids:
-            if item.name == name:
-                raise Exception('A Fluid Object with the supplied name already exists')
-        self.name = name
+        
+        # Attach objects for internal access
         self._net = network
-        #Initialize necessary empty attributes
-        self.pore_data = {}
-        self.throat_data = {}
-        self.pore_info = {}
-        self.throat_info = {}
+        
+        # Link this Fluid to the Network
+        network._fluids.append(self) 
+        
+        # Initialize tracking lists
         self._physics = []
         self._prop_list = []
-        network._fluids.append(self) #attach fluid to network
-        #Set default T and P since most propery models require it
-        self.set_pore_data(prop='temperature',data=298.0)
-        self.set_pore_data(prop='pressure',data=101325.0)
-        self.set_pore_data(prop='occupancy',data=1)
-        self.set_throat_data(prop='occupancy',data=1)
-        #Initialize label 'all' in the object's own info dictionaries
-        self.set_pore_info(label='all',locations=self._net.get_pore_indices())
-        self.set_throat_info(label='all',locations=self._net.get_throat_indices())
         
-    def apply_conditions(self,**kwargs):
+        self.name = name
+        
+        # Set default T and P since most propery models require it
+        self.set_data(prop='temperature',pores='all',data=298.0)
+        self.set_data(prop='pressure',pores='all',data=101325.0)
+        
+        # Initialize label 'all' in the object's own info dictionaries
+        self.set_info(label='all',pores=network.pores('all'))
+        self.set_info(label='all',throats=network.throats('all'))
+        
+    def apply_conditions(self,**values):
         r'''
-        Documentation for this method is being updated, we are sorry for the inconvenience.
+        Apply multiple scalar conditions to the fluid in a single step
+        
+        Parameters
+        ----------
+        values : name / value pair ()
+            Any arguments can be passed, along with a corresponding values.  
+            These arguments will be assigned to the fluid's pore data
+            
+        Examples
+        --------
+        >>> pn = OpenPNM.Network.TestNet()
+        >>> air = OpenPNM.Fluids.Air(loglevel=50,network=pn)
+        >>> air.apply_conditions(molar_mass=18,density=1000)
         '''
-        for item in kwargs.keys():
-            self.set_pore_data(prop=item,data=kwargs[item])
+        for item in values.keys():
+            self.set_data(prop=item,pores='all',data=values[item])
 
     def regenerate(self,prop_list='',mode=None):
         r'''
@@ -100,8 +111,14 @@ class GenericFluid(OpenPNM.Utilities.Tools):
         for item in prop_list:
             self._logger.debug('Refreshing: '+item)
             getattr(self,item)()
-        
+            
     def add_method(self,prop='',prop_name='',**kwargs):
+        r'''
+        THIS METHOD IS DEPRECATED USE add_property() INSTEAD
+        '''
+        self.add_property(prop=prop,prop_name=prop_name,**kwargs)
+        
+    def add_property(self,prop='',prop_name='',**kwargs):
         r'''
         Add specified property estimation model to the fluid object.
         
@@ -120,12 +137,10 @@ class GenericFluid(OpenPNM.Utilities.Tools):
         Examples
         --------
         >>> pn = OpenPNM.Network.TestNet()
-        >>> fluid = OpenPNM.Fluids.GenericFluid(network=pn,name='test_fluid')
+        >>> fluid = OpenPNM.Fluids.GenericFluid(network=pn)
         >>> fluid.add_method(prop='diffusivity',model='constant',value=1.234)
         >>> fluid.regenerate()
-        >>> fluid.get_pore_data(prop='diffusivity') #Use fluid's getter
-        array([ 1.234])
-        >>> pn.get_pore_data(prop='diffusivity',phase=fluid) #Use network's getter
+        >>> fluid.get_pore_data(prop='diffusivity')
         array([ 1.234])
         
         In cases where the same property is needed multiple times (like 
@@ -134,8 +149,6 @@ class GenericFluid(OpenPNM.Utilities.Tools):
         
         >>> fluid.add_method(prop='diffusivity',prop_name='diffusivity_of_species_2',model='constant',value=3.333)
         >>> fluid.regenerate()
-        >>> pn.get_pore_data(prop='diffusivity_of_species_2',phase=fluid)
-        array([ 3.333])
         '''
         try:
             function = getattr( getattr(OpenPNM.Fluids, prop), kwargs['model'] ) # this gets the method from the file

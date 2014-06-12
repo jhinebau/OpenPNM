@@ -30,8 +30,8 @@ This generates a topological network called *pn* which contains pores at the cor
 
 	pn.num_pores()  # 1000
 	pn.num_throats()  # 2700
-	pn.find_neighbor_pores(pnums=[1])  # [0,2,11,101]
-	pn.get_pore_lables(pnums=[1])  # ['all','bottom','left']
+	pn.find_neighbor_pores(pores=[1])  # [0,2,11,101]
+	pn.get_pore_lables(pores=[1])  # ['all','bottom','left']
 	pn.get_pore_indices(labels=['all','bottom','left'],mode='intersection')  # [0,1,2,3,4,5,6,7,8,9]
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -57,8 +57,9 @@ This freshly instantiated object contains no methods for actual geometry calcula
 	geom.add_method(prop='pore_diameter',model='sphere',name='weibull_min',shape=2.5,loc=6e-6,scale=2e-5)
 	geom.add_method(prop='throat_diameter',model='cylinder',name='weibull_min',shape=2.5,loc=6e-6,scale=2e-5)
 	geom.add_method(prop='pore_volume',model='sphere')
-	geom.add_method(prop='throat_volume',model='cylinder')
 	geom.add_method(prop='throat_length',model='straight')
+	geom.add_method(prop='throat_volume',model='cylinder')
+	
 	
 Each of the above commands looks into the submodule associated with the `prop` argument, extracts the method corresponding the `model` argument, assigns the specified parameters, and finally attaches the method to the Geometry object.  
 
@@ -139,7 +140,7 @@ As with fluids and geometry objects, the next step is to build-up the bare objec
 
 .. code-block:: python
 
-	phys_water.add_method(prop='capillary_pressure',model='purcell',r_torioid=1.e-5)
+	phys_water.add_method(prop='capillary_pressure',model='purcell',r_torioid='1.e-5')
 	phys_water.add_method(prop='hydraulic_conductance',model='hagen_poiseuille')
 	phys_water.add_method(prop='diffusive_conductance',model='bulk_diffusion')
 	phys_air.add_method(prop='hydraulic_conductance',model='hagen_poiseuille')
@@ -148,8 +149,8 @@ As with fluids and geometry objects, the next step is to build-up the bare objec
 The final step is to ``regenerate()`` the object so that the data is actually calculated.  
 	
  
-
-
+	
+ 
 
 
 

@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
-# Author: Andreas Putz
-# Copyright (c) 2013, OpenPNM
-# License: TBD.
 
 r"""
 ##################################################################################
-:mod:`OpenPNM` --  A scientific pore network calculator for porous transport media
+:mod:`OpenPNM` --  A scientific pore network simulator for porous transport media
 ##################################################################################
 .. module:: OpenPNM
     :platform: Linux, Windows
@@ -99,22 +95,12 @@ Package Documentation
    :show-inheritance:
 """
 
-__version__ = '0.0.1'
+__version__ = '1.0.0'
 
 __requires__ = [
-    'scipy',
-    'numpy',
+    'scipy'
 ]
 
-__extras_require__ = {
-    'app': [
-        'envisage',
-    ],
-}
-
-# __all__ = ['Base']
-
-#_local_files_path = os.path.join(os.path.abspath(OpenPNM),'LocalFiles')
 
 from . import Utilities
 from . import Network
@@ -123,7 +109,8 @@ from . import Fluids
 from . import Physics
 from . import Algorithms
 from . import Visualization
-#from . import GUI
+from . import Graphics
+from . import Shortcuts
 
 
 

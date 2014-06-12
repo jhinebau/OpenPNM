@@ -34,16 +34,17 @@ class GenericAlgorithm(OpenPNM.Utilities.Tools):
 
     """
 
-    def __init__(self,name,network=None,**kwords):
+    def __init__(self,network=None,name=None,**kwords):
         r"""
         Initialize
         """
         super(GenericAlgorithm,self).__init__(**kwords)
         self._logger.debug("Construct class")
-        self.name = name
         self._net = network
-        self.set_pore_info(label='all',locations=self._net.get_pore_info(label='all')) #This is necessary for the methods from 'tools' to work.  They must know network size.
-        self.set_throat_info(label='all',locations=self._net.get_throat_info(label='all'))  
+        self.name = name        
+        # Initialize label 'all' in the object's own info dictionaries
+        self.set_info(label='all',pores=network.pores('all'))
+        self.set_info(label='all',throats=network.throats('all'))
 
     def run(self,**params):
         r"""

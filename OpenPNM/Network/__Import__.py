@@ -92,8 +92,6 @@ class MatFile(GenericNetwork):
         self._add_geometry()
         self._add_xtra_pore_data()
         self._add_xtra_throat_data()
- 
-        return self
         
     def _add_pores(self):
         Pind = sp.arange(0,self._Np)
@@ -105,19 +103,23 @@ class MatFile(GenericNetwork):
         Tind = sp.arange(0,self._Nt)
         self.set_throat_info(label='all',locations=sp.ones_like(Tind))
         self._logger.info('Writing throat data')
-        self.set_throat_data(prop='connections',data=self._dictionary['tconnections'])
+        self.set_throat_data(prop='conns',data=self._dictionary['tconnections'])
         
     def _add_geometry(self):
         
         geom = OpenPNM.Geometry.GenericGeometry(network=self,name='imported')
+        geom.set_locations(pores='all',throats='all')
         
         data = self._dictionary['pvolume']
-        geom.add_method(prop='pore_volume',model='constant',value=data)
+        geom.add_property(prop='pore_volume',model='constant',value=data)
         data = self._dictionary['pdiameter']
         geom.add_method(prop='pore_diameter',model='constant',value=data)
         
         data = self._dictionary['tdiameter']
-        geom.add_method(prop='throat_diameter',model='constant',value=data)
+        geom.add_property(prop='throat_diameter',model='constant',value=data)
+        
+        geom.add_property(prop='throat_length',model='straight')
+        geom.regenerate()
     
     def _add_xtra_pore_data(self):
         xpdata = self._xtra_pore_data
@@ -140,11 +142,11 @@ class MatFile(GenericNetwork):
             if type(xtdata) is type([]):
                 for tdata in xtdata:
                     try:
-                        self.set_pore_data(prop=tdata,data=self._dictionary['t'+tdata])
+                        self.set_throat_data(prop=tdata,data=self._dictionary['t'+tdata])
                     except:
                         self._logger.warning('Could not add throat data: '+tdata+' to network')
             else:
                 try:
-                    self.set_pore_data(prop=xtdata,data=self._dictionary['t'+xtdata])
+                    self.set_throat_data(prop=xtdata,data=self._dictionary['t'+xtdata])
                 except:
                     self._logger.warning('Could not add throat data: '+xtdata+' to network')
