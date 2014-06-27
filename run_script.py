@@ -2,20 +2,28 @@ import OpenPNM
 import scipy as sp
 import OpenPNM.Utilities.misc as misc
 
+
 #==============================================================================
 '''Build Topological Network'''
 #==============================================================================
-pn = OpenPNM.Network.Cubic(loglevel=30,name='net')
-pn.generate(divisions=[20, 20, 20], lattice_spacing=[0.0001],add_boundaries=True)
+pn = OpenPNM.Network.Cubic2(loglevel=10,name='net')
 
-#==============================================================================
-'''Build Geometry'''
-#==============================================================================
+domains = {}
+domains['GDLa'] = {'region': [[0,0,0],[0.0005,0.0005,0.0003]], 'Lc': 0.00005}
+domains['CLa']  = {'region': [[0,0,0.0003],[0.0005,0.0005,0.00035]], 'Lc': 0.00001}
+domains['PEM']  = {'region': [[0,0,0.00035],[0.0005,0.0005,0.0004]], 'Lc': 0.00001}
+domains['CLc']  = {'region': [[0,0,0.0004],[0.0005,0.0005,0.00045]], 'Lc': 0.00001}
+domains['GDLc'] = {'region': [[0,0,0.00045],[0.0005,0.0005,0.00075]], 'Lc': 0.00005}
+
+pn.generate(domains=domains)
+
+pn.save_object('big_net.npz')
+
+###==============================================================================
+##'''Build Geometry'''
+###==============================================================================
 geom = OpenPNM.Geometry.Toray090(network=pn,name='geom')
-geom.set_locations(pores=pn.pores('internal'),throats='all')
-
-boun = pn.add_geometry(subclass='Boundary',name='boun')
-boun.set_locations(pores=pn.pores('boundary'))
+geom.set_locations(pores=pn.pores('all'),throats='all')
 
 pn.regenerate_geometries()
 
@@ -60,7 +68,7 @@ OP_1.run()
 alg = OpenPNM.Algorithms.FickianDiffusion(loglevel=10, network=pn)
 # Assign Dirichlet boundary conditions to top and bottom surface pores
 BC1_pores = pn.pores(labels=['top','boundary'],mode='intersection')
-alg.set_boundary_conditions(bctype='Dirichlet', bcvalue=sp.log(1-.6), pores=BC1_pores)
+alg.set_boundary_conditions(bctype='Dirichlet', bcvalue=sp.log(1-0.6), pores=BC1_pores)
 
 BC2_pores = pn.pores(labels=['bottom','boundary'],mode='intersection')
 alg.set_boundary_conditions(bctype='Dirichlet', bcvalue=sp.log(1-0.4), pores=BC2_pores)
@@ -81,8 +89,8 @@ alg.update()
 '''Export to VTK'''
 #------------------------------------------------------------------------------
 #OpenPNM.Visualization.Vtp.write(filename='test.vtp',fluids=[air,water],network=pn)
-vis = OpenPNM.Visualization.VTK()
-vis.write(network=pn,fluids=[air,water])
+vis = OpenPNM.Visualization.VTK(loglevel=10)
+vis.write(network=pn)
 
 
 
