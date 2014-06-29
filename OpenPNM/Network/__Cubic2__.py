@@ -128,7 +128,10 @@ class Cubic2(GenericNetwork):
         labels = self.labels('pore')
         labels.remove('pore.all')
         for item in labels:
-            self.propagate_labels(pores=self.pores(item))
+            Ps = self.pores(item)
+            Ts = self.find_neighbor_throats(Ps)
+            self['throat.'+item.split('.')[-1]] = sp.ones_like(self['throat.all'],dtype=bool)
+            self['throat.'+item.split('.')[-1]][Ts] = True
         
         self._logger.debug(sys._getframe().f_code.co_name+": Identify and trim non-cubic connections")
         dist = misc.dist(self['pore.coords'],self['pore.coords'])
