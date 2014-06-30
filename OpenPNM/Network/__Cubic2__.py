@@ -90,7 +90,6 @@ class Cubic2(GenericNetwork):
         """
         domains = self._domains
         self._logger.info(sys._getframe().f_code.co_name+": Define connections between pores")
-        Np = self.num_pores()
         pts = self['pore.coords']
         #Perform tessellation
         self._logger.debug(sys._getframe().f_code.co_name+": Beginning tessellation")
@@ -122,25 +121,31 @@ class Cubic2(GenericNetwork):
         
         #Enter current throats into network
         conns = sp.vstack((adjmat.row, adjmat.col)).T
-        self['throat.conns'] = conns 
-        self._logger.debug(sys._getframe().f_code.co_name+": Propigating pore labels to new throats")
+        self['throat.conns'] = conns
+        
+        #Apply labels to the new throats
+        self._logger.debug(sys._getframe().f_code.co_name+": Propagating pore labels to new throats")
         self['throat.all'] = np.ones_like(conns[:,0],dtype=bool)
         labels = self.labels('pore')
         labels.remove('pore.all')
         for item in labels:
             Ps = self.pores(item)
             Ts = self.find_neighbor_throats(Ps)
-            self['throat.'+item.split('.')[-1]] = sp.ones_like(self['throat.all'],dtype=bool)
-            self['throat.'+item.split('.')[-1]][Ts] = True
+            try:
+                self['throat.'+item.split('.')[-1]][Ts] = True
+            except:
+                self['throat.'+item.split('.')[-1]] = sp.zeros_like(self['throat.all'],dtype=bool)
+                self['throat.'+item.split('.')[-1]][Ts] = True
         
         self._logger.debug(sys._getframe().f_code.co_name+": Identify and trim non-cubic connections")
-        dist = misc.dist(self['pore.coords'],self['pore.coords'])
-        tlen = dist[self['throat.conns'][:,0],self['throat.conns'][:,1]]
         bad_Ts = sp.zeros_like(self.throats(),dtype=bool)
-        for item in domains.keys():
-            t = self.throats(item)
-            temp = tlen[t]>(1.1*domains[item]['Lc'])
-            bad_Ts[t[temp]] = True
+        for item in domains:
+            Ts = self.throats(labels=item)
+            Ps = self['throat.conns'][Ts]
+            Cs = self['pore.coords'][Ps.T]
+            tlen = sp.sqrt(sp.sum(sp.square(Cs[1,:]-Cs[0,:]),axis=1))
+            temp = tlen>(1.1*domains[item]['Lc'])
+            bad_Ts[Ts[temp]] = True
         
         #Find throats connecting domains before trimming them
         Ts1 = self.throats(labels=['CLa','GDLa'],mode='intersection')
@@ -153,6 +158,9 @@ class Cubic2(GenericNetwork):
         #Now re-add throats that are not too long
         Ds1 = misc.dist(self['pore.coords'][Ps1[:,0]],self['pore.coords'][Ps1[:,1]])
         Ds2 = misc.dist(self['pore.coords'][Ps2[:,0]],self['pore.coords'][Ps2[:,1]])
+#        Ds1 = dist[Ps1[:,0],:][:,Ps1[:,1]]
+#        Ds2 = dist[Ps2[:,0],:][:,Ps2[:,1]]
+#        del dist
         
         #Remap DsN onto PsN
         thresh = domains['GDLa']['Lc']/1.5

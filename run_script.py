@@ -50,35 +50,35 @@ phys_air = OpenPNM.Physics.BasePhysics(network=pn, fluid=air,geometry=geom,name=
 
 #Use Network's Physics regeneration method
 pn.regenerate_physics()
-
-#==============================================================================
-'''Begin Simulations'''
-#==============================================================================
-'''Perform a Drainage Experiment (OrdinaryPercolation)'''
-#------------------------------------------------------------------------------
-OP_1 = OpenPNM.Algorithms.OrdinaryPercolation(loglevel=30,network=pn)
-a = pn.pores(labels=['bottom','boundary'],mode='intersection')
-OP_1.setup(invading_fluid=water,defending_fluid=air,inlets=a,npts=20)
-OP_1.run()
-#OP_1.plot_drainage_curve()
-
-#------------------------------------------------------------------------------
-'''Perform Fickian Diffusion'''
-#------------------------------------------------------------------------------
-alg = OpenPNM.Algorithms.FickianDiffusion(loglevel=10, network=pn)
-# Assign Dirichlet boundary conditions to top and bottom surface pores
-BC1_pores = pn.pores(labels=['top','boundary'],mode='intersection')
-alg.set_boundary_conditions(bctype='Dirichlet', bcvalue=sp.log(1-0.6), pores=BC1_pores)
-
-BC2_pores = pn.pores(labels=['bottom','boundary'],mode='intersection')
-alg.set_boundary_conditions(bctype='Dirichlet', bcvalue=sp.log(1-0.4), pores=BC2_pores)
-
-# Updating data based on the result of Percolation Algorithms
-OP_1.update(Pc=1000)
-# Run simulation
-alg.setup(fluid=air)
-alg.run()
-alg.update()
+#
+##==============================================================================
+#'''Begin Simulations'''
+##==============================================================================
+#'''Perform a Drainage Experiment (OrdinaryPercolation)'''
+##------------------------------------------------------------------------------
+#OP_1 = OpenPNM.Algorithms.OrdinaryPercolation(loglevel=30,network=pn)
+#a = pn.pores(labels=['bottom','boundary'],mode='intersection')
+#OP_1.setup(invading_fluid=water,defending_fluid=air,inlets=a,npts=20)
+#OP_1.run()
+##OP_1.plot_drainage_curve()
+#
+##------------------------------------------------------------------------------
+#'''Perform Fickian Diffusion'''
+##------------------------------------------------------------------------------
+#alg = OpenPNM.Algorithms.FickianDiffusion(loglevel=10, network=pn)
+## Assign Dirichlet boundary conditions to top and bottom surface pores
+#BC1_pores = pn.pores(labels=['top','boundary'],mode='intersection')
+#alg.set_boundary_conditions(bctype='Dirichlet', bcvalue=sp.log(1-0.6), pores=BC1_pores)
+#
+#BC2_pores = pn.pores(labels=['bottom','boundary'],mode='intersection')
+#alg.set_boundary_conditions(bctype='Dirichlet', bcvalue=sp.log(1-0.4), pores=BC2_pores)
+#
+## Updating data based on the result of Percolation Algorithms
+#OP_1.update(Pc=1000)
+## Run simulation
+#alg.setup(fluid=air)
+#alg.run()
+#alg.update()
 
 
 #Deff = OpenPNM.Algorithms.EffectiveProperty(network=pn)
@@ -89,7 +89,7 @@ alg.update()
 '''Export to VTK'''
 #------------------------------------------------------------------------------
 #OpenPNM.Visualization.Vtp.write(filename='test.vtp',fluids=[air,water],network=pn)
-vis = OpenPNM.Visualization.VTK(loglevel=10)
+vis = OpenPNM.Visualization.VTK()
 vis.write(network=pn)
 
 
