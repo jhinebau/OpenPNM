@@ -1162,7 +1162,15 @@ class Tools(Base,dict):
                 temp.append('throat.' + item)
             props = temp
         return self.data_health(element='throat',props=props,quiet=quiet)
-        
+   
+    def set_nan_value(self,element,prop,value):
+        r'''
+        It will set values to nans in a pore/throat property. 
+        '''
+        temp = getattr(self,'_get_data')(element=element,prop= prop)
+        loc = sp.isnan(temp)
+        getattr(self,'_set_data')(element=element,prop=prop,locations=loc,data= value,mode='merge')
+        self._logger.info('The nan values in '+element+' proprty '+prop+', have been replaced by the specified values.')     
 
 if __name__ == '__main__':
     import doctest
