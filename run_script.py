@@ -6,19 +6,55 @@ import OpenPNM.Utilities.misc as misc
 #==============================================================================
 '''Build Topological Network'''
 #==============================================================================
-pn = OpenPNM.Network.Cubic2(loglevel=10,name='net')
+#pn = OpenPNM.Network.Cubic2(loglevel=10,name='net')
+#
+#domains = {}
+#domains['GDLa'] = {'region': [[0,0,0],[0.0005,0.0005,0.0003]], 'Lc': 0.00005}
+#domains['CLa']  = {'region': [[0,0,0.0003],[0.0005,0.0005,0.00035]], 'Lc': 0.00001}
+#domains['PEM']  = {'region': [[0,0,0.00035],[0.0005,0.0005,0.0004]], 'Lc': 0.00001}
+#domains['CLc']  = {'region': [[0,0,0.0004],[0.0005,0.0005,0.00045]], 'Lc': 0.00001}
+#domains['GDLc'] = {'region': [[0,0,0.00045],[0.0005,0.0005,0.00075]], 'Lc': 0.00005}
+#
+#pn.generate(domains=domains)
+#pn.save_object('big_net.npz')
+pn = OpenPNM.Network.Cubic(loglevel=10,name='net')
+pn.generate(domain_size=[0.0005,0.0005,0.00075],lattice_spacing=[0.000025],add_boundaries=False)
 
-domains = {}
-domains['GDLa'] = {'region': [[0,0,0],[0.0005,0.0005,0.0003]], 'Lc': 0.00005}
-domains['CLa']  = {'region': [[0,0,0.0003],[0.0005,0.0005,0.00035]], 'Lc': 0.00001}
-domains['PEM']  = {'region': [[0,0,0.00035],[0.0005,0.0005,0.0004]], 'Lc': 0.00001}
-domains['CLc']  = {'region': [[0,0,0.0004],[0.0005,0.0005,0.00045]], 'Lc': 0.00001}
-domains['GDLc'] = {'region': [[0,0,0.00045],[0.0005,0.0005,0.00075]], 'Lc': 0.00005}
+GDLa = 0.00030
+CLa  = 0.00035
+PEM  = 0.00040
+CLc  = 0.00045
+GDLc = 0.00075
 
-pn.generate(domains=domains)
+temp = pn['pore.coords'][:,2]<=GDLa
+pn['pore.GDLa'] = sp.zeros_like(pn['pore.all'],dtype=bool)
+pn['pore.GDLa'][temp] = True
+pn['throat.GDLa'] = sp.zeros_like(pn['throat.all'],dtype=bool)
+pn['throat.GDLa'][pn.find_neighbor_throats(temp)] = True
 
-pn.save_object('big_net.npz')
+temp = (pn['pore.coords'][:,2]>GDLa) * (pn['pore.coords'][:,2]<=CLa)
+pn['pore.CLa'] = sp.zeros_like(pn['pore.all'],dtype=bool)
+pn['pore.CLa'][temp] = True
+pn['throat.CLa'] = sp.zeros_like(pn['throat.all'],dtype=bool)
+pn['throat.CLa'][pn.find_neighbor_throats(temp)] = True
 
+temp = (pn['pore.coords'][:,2]>CLa) * (pn['pore.coords'][:,2]<=PEM)
+pn['pore.PEM'] = sp.zeros_like(pn['pore.all'],dtype=bool)
+pn['pore.PEM'][temp] = True
+pn['throat.PEM'] = sp.zeros_like(pn['throat.all'],dtype=bool)
+pn['throat.PEM'][pn.find_neighbor_throats(temp)] = True
+
+temp = (pn['pore.coords'][:,2]>PEM) * (pn['pore.coords'][:,2]<=CLc)
+pn['pore.CLc'] = sp.zeros_like(pn['pore.all'],dtype=bool)
+pn['pore.CLc'][temp] = True
+pn['throat.CLc'] = sp.zeros_like(pn['throat.all'],dtype=bool)
+pn['throat.CLc'][pn.find_neighbor_throats(temp)] = True
+
+temp = (pn['pore.coords'][:,2]>CLc) * (pn['pore.coords'][:,2]<=GDLc)
+pn['pore.GDLc'] = sp.zeros_like(pn['pore.all'],dtype=bool)
+pn['pore.GDLc'][temp] = True
+pn['throat.GDLc'] = sp.zeros_like(pn['throat.all'],dtype=bool)
+pn['throat.GDLc'][pn.find_neighbor_throats(temp)] = True
 
 R = 8.314
 F = 9.64870e4
@@ -28,12 +64,13 @@ alpha_cathode = 0.5
 T = 353
 I0_anode = 1e3
 I0_cathode = 1.8e-2
-active_area = 5e5
+active_area = 5e5 #m2/m3
 PEM_sigma = 1
 porosity_CL = 0.5
 C_ionomer_fraction = 0.4 
-tort_CL = (porosity_CL)**1.5
+tort_CL = (porosity_CL)**-0.5
 PEM_Lc = 0.00001
+PEM_V = PEM_Lc**3
 CL_Lc = 0.00001
 
 ###==============================================================================
@@ -275,28 +312,20 @@ Nafion.set_data(prop='occupancy',throats=pn.throats('all'),data=1)
 hydrogen.set_data(prop='occupancy',throats=pn.throats('all'),data=1)
 air.set_data(prop='occupancy',throats=pn.throats('all'),data=1)
 
-
-
 #==============================================================================
 '''Begin Simulations'''
 #==============================================================================
-
 '''PEM effective resistance '''
-##=============================================================================
+#==============================================================================
 PEM_Reff_alg = OpenPNM.Algorithms.OhmicConduction(name='PEM_Reff_alg',loglevel=10, network=pn)
 PEM_Reff_alg_BC1_pores =  pn.pores('CLa')[Z[P_CL_a]==min(Z[P_CL_a])]
 PEM_Reff_alg.set_boundary_conditions(bctype='Dirichlet', bcvalue = 0.8, pores = PEM_Reff_alg_BC1_pores)
-#------------------------------------------------------------------------------
 PEM_Reff_alg_BC2_pores = pn.pores('CLc')[Z[P_CL_c]==max(Z[P_CL_c])] 
 PEM_Reff_alg.set_boundary_conditions(bctype='Dirichlet', bcvalue = 0.4, pores = PEM_Reff_alg_BC2_pores)
-#------------------------------------------------------------------------------
 Nafion.set_nan_value(element='throat',prop='electronic_conductance',value=1e-40)
-#------------------------------------------------------------------------------
 PEM_Reff_alg.setup(fluid=Nafion)
 PEM_Reff_alg.run()
 PEM_Reff_alg.update()
-#------------------------------------------------------------------------------
-
 
 Ps = PEM_Reff_alg.pores(labels='pore.Dirichlet')
 BCs = sp.unique(PEM_Reff_alg['pore.bcval_Dirichlet'][Ps])
@@ -315,12 +344,12 @@ Reff = sp.absolute((BCs[0]-BCs[1])/sp.sum(i))
 
 current =[]
 voltage= []
-surf_area = active_area/pn.num_pores('CLa')
+surf_area = active_area*PEM_V
 
 hydrogen['throat.diffusive_conductance'][T_PEM_CL_a] = 1e-90
 air['throat.diffusive_conductance'][T_PEM_CL_c] = 1e-90
 
-for I in [0.001]:
+for I in [0.0001]:
     
     current.append(I)
     S_H2 = I/(2*F)
@@ -328,7 +357,6 @@ for I in [0.001]:
     
     #==============================================================================
     '''Necessary transport algorithms and the fixed boundary conditions'''
-    
     ##=============================================================================
     '''Hydrogen Fickian Diffusion'''
     ##=============================================================================
@@ -336,39 +364,32 @@ for I in [0.001]:
     Fick_hydrogen = OpenPNM.Algorithms.FickianDiffusion(name='Fickian_alg_hydrogen',loglevel=50, network=pn)
     #------------------------------------------------------------------------------
     Fick_hydrogen_BC1_pores = pn.pores('GDLa')[Z[P_GDL_a]==min(Z[P_GDL_a])]
-    Fick_hydrogen.set_boundary_conditions(bctype='Dirichlet', bcvalue=0.8, pores=Fick_hydrogen_BC1_pores)
+    Fick_hydrogen.set_boundary_conditions(bctype='Dirichlet', bcvalue=0.5, pores=Fick_hydrogen_BC1_pores)
     #------------------------------------------------------------------------------
     Fick_hydrogen_BC2_pores = pn.pores('CLa')
-    
     Fick_hydrogen.set_boundary_conditions(bctype='Neumann_group', bcvalue= S_H2, pores=Fick_hydrogen_BC2_pores)
     
-
     #------------------------------------------------------------------------------
     hydrogen.set_nan_value(element='throat',prop='diffusive_conductance',value=1e-40)
-    #
+    
     Fick_hydrogen.setup(fluid=hydrogen)
     Fick_hydrogen.run()
     Fick_hydrogen.update()
-    #
+    
     ##=============================================================================
     '''Air Fickian Diffusion'''
     ##=============================================================================
     Fick_air = OpenPNM.Algorithms.FickianDiffusion(name='Fickian_alg_air',loglevel=50, network=pn)
     #------------------------------------------------------------------------------
     Fick_air_BC1_pores = pn.pores('GDLc')[Z[P_GDL_c]==max(Z[P_GDL_c])]
-    Fick_air.set_boundary_conditions(bctype='Dirichlet', bcvalue=0.8, pores=Fick_air_BC1_pores)
+    Fick_air.set_boundary_conditions(bctype='Dirichlet', bcvalue=0.1, pores=Fick_air_BC1_pores)
     #------------------------------------------------------------------------------
-    
     Fick_air_BC2_pores = pn.pores('CLc')
-    
     Fick_air.set_boundary_conditions(bctype='Neumann_group', bcvalue= S_O2, pores=Fick_air_BC2_pores)
-    
-    #------------------------------------------------------------------------------
     air.set_nan_value(element='throat',prop='diffusive_conductance',value=1e-40)
     Fick_air.setup(fluid=air)
     Fick_air.run()
     Fick_air.update()
-    #
     
     ##=============================================================================
     '''Local mass consumption anode'''
@@ -408,8 +429,8 @@ for I in [0.001]:
     voltage.append(Vcell)
 
 
-import matplotlib.pylab as plt
-plt.plot(current,voltage)
+#import matplotlib.pylab as plt
+#plt.plot(current,voltage)
 
 
 #------------------------------------------------------------------------------
@@ -417,7 +438,7 @@ plt.plot(current,voltage)
 #------------------------------------------------------------------------------
 #OpenPNM.Visualization.VTK.write(filename='test.vtp',fluids=[air,water,Nafion,solid],network=pn)
 vis = OpenPNM.Visualization.VTK()
-vis.write(filename='test.vtp',fluids=[air,hydrogen,Nafion,solid],network=pn)
+vis.write(filename='test.vtp',network=pn)
 
 
 

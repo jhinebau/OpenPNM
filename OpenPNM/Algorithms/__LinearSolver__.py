@@ -262,27 +262,47 @@ class LinearSolver(GenericAlgorithm):
     def rate(self,pores='',mode='union'):
         r'''
         Send a list of pores (or throats) and recieve the cumulative rate
-        of material moving into them
+        of material moving into them.
         '''
         pores = sp.array(pores,ndmin=1)
         R = []
-        if mode=='union':   p_iter = 1
-        elif mode=='single':    p_iter = sp.shape(pores)[0]
+        if mode=='union':
+            p_iter = 1
+        elif mode=='single':
+            p_iter = sp.shape(pores)[0]
         for i in sp.r_[0:p_iter]:
-            if mode=='union': P = pores
-            elif mode=='single':    P = pores[i]
+            if mode=='union':
+                P = pores
+            elif mode=='single':
+                P = pores[i]
             throats = self._net.find_neighbor_throats(P,flatten=True,mode='not_intersection')
             p1 = self._net.find_connected_pores(throats)[:,0]
             p2 = self._net.find_connected_pores(throats)[:,1]
             pores1 = sp.copy(p1)
             pores2 = sp.copy(p2)
-            pores1[-sp.in1d(p1,P)] = p2[-sp.in1d(p1,P)]        
+            pores1[-sp.in1d(p1,P)] = p2[-sp.in1d(p1,P)]
             pores2[-sp.in1d(p1,P)] = p1[-sp.in1d(p1,P)]
             X1 = self._result[pores1]
             X2 = self._result[pores2]
             g = self._fluid[self._conductance][throats]
             R.append(sp.sum(sp.multiply(g,(X1-X2))))
         return(sp.array(R,ndmin=1))
+        
+    def find_rate(self,pores=[]):
+        r'''
+        '''
+        pores = sp.array(pores,ndmin=1)
+        rn = []
+        for p in pores:
+            Pn = self._net.find_neighbor_pores(p,excl_self=True)
+            Tn = self._net.find_neighbor_throats(p)
+            xi = self[self._quantity][p]
+            xn = self[self._quantity][Pn]
+            gn = self._fluid[self._conductance][Tn]
+            rnet = sp.sum(gn*(xi - xn))
+            rn.append(rnet)
+        return sp.array(rn,ndmin=1)
+        
         
     def _do_one_inner_iteration(self):
         r'''
