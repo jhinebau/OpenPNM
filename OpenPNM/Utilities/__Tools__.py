@@ -86,12 +86,13 @@ class Tools(Base,dict):
                         else:
                             self._logger.error('Cannot overwrite '+key+' with an array of the wrong length')
     
-#    def __getitem__(self,key):
+    def __getitem__(self,key):
+        return super(Base, self).__getitem__(key)
 #        try:
-#            temp = super(Base, self).__getitem__(key)
+#            return super(Base, self).__getitem__(key)
 #        except:
 #            self._logger.warning('Requested array will be created')
-#            self.__setitem__(key,[])
+#            super(Base, self).__setitem__(key,sp.ones(self.count(key.split('.')[0]))*sp.nan)
 #            temp = super(Base, self).__getitem__(key)
 #        return temp
     

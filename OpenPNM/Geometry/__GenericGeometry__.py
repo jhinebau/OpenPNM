@@ -14,7 +14,7 @@ import OpenPNM
 import scipy as sp
 from functools import partial
 
-class GenericGeometry(OpenPNM.Utilities.Base):
+class GenericGeometry(OpenPNM.Utilities.Base,dict):
     r"""
     GenericGeometry - Base class to construct a Geometry object
 
@@ -168,13 +168,27 @@ class GenericGeometry(OpenPNM.Utilities.Base):
         for item in prop_list:
             self._logger.debug('Refreshing: '+item)
             getattr(self,item)()
-    
-    def add_method(self,prop='',prop_name='',**kwargs):
-        r'''
-        THIS METHOD IS DEPRECATED USE add_property() INSTEAD
-        '''
-        self.add_property(prop=prop,prop_name=prop_name,**kwargs)
-    
+            
+    def add_method(self,model,propname='',**kwargs):
+        self[propname] = partial(model,geometry=self,**kwargs)
+        
+#    def add_method(self,model,propname='',**kwargs):
+#        r'''
+#        THIS METHOD IS DEPRECATED USE add_property() INSTEAD
+#        '''
+#        fn = partial(model,geometry=self,**kwargs)       
+#        setattr(self,'_'+propname.replace('.','_'),fn)
+#        fget = lambda self: self.__get__(propname)
+#        setattr(type(self),propname.replace('.','_'), property(fget=fget))
+#    
+#        def __get__(self, obj, objtype=None):
+#            if obj is None:
+#                return self
+#            return self._proxy(obj, self._fget, self._fset, self._fdel)
+#        
+#    def __get__(self,propname):
+#        return getattr(self,'_'+propname.replace('.','_'))()
+        
     def add_property(self,prop='',prop_name='',**kwargs):
         r'''
         Add specified property estimation model to the fluid object.
@@ -227,6 +241,13 @@ class GenericGeometry(OpenPNM.Utilities.Base):
             temp = temp + sp.array(self._net.get_throat_info(label=item),dtype=int)
         print('Geometry labels overlap in', sp.sum(temp>1),'throats')
         print('Geometry not yet applied to',sp.sum(temp==0),'throats')
+        
+    def __getitem__(self,propname):
+        temp = dict.__getitem__(self,propname)
+        if temp.__class__.__name__ == 'partial':
+            return temp()
+        else:
+            return temp
 
 if __name__ == '__main__':
     #Run doc tests

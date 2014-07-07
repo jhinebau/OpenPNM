@@ -4,14 +4,13 @@ Submodule -- pore_seeds
 ===============================================================================
 
 """
-import scipy as sp
+import scipy as _sp
 
-def random(pores,seed=None):
+def random(geometry,seed=None):
     r"""
     Assign random number to pore bodies for later use in pore size distributions
     """
-    if type(pores) != int:
-        pores = sp.shape(pores)[0]
-    sp.random.seed(seed)  # Set seed for generator
-    pore_seeds = sp.random.rand(pores)
+    pores = geometry.pores()
+    _sp.random.seed(seed)  # Set seed for generator
+    pore_seeds = _sp.random.rand(_sp.shape(pores)[0])
     return pore_seeds
