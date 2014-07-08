@@ -11,6 +11,7 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if sys.path[1] != parent_dir:
     sys.path.insert(1, parent_dir)
 import scipy as sp
+from functools import partial
 import OpenPNM
 from OpenPNM.Utilities import Base
 
@@ -35,7 +36,6 @@ class Tools(Base,dict):
         is to limit what type and shape of data can be written to protect
         the integrity of the network.
         '''
-        print('Setting '+key+' from Tools')
         element = key.split('.')[0]
         if type(value) == int:
             value = [value]
@@ -105,17 +105,36 @@ class Tools(Base,dict):
             elif element == 'throat':
                 locations = 'throats'
             proplist = getattr(self,'_'+propname.replace('.','_'))
-            if propname in self.keys():
-                #See if a dict item already exists
-                temp = dict.__getitem__(self,propname)
-            else:
-                #If not, create a temp array
-                temp = sp.ones((self.count(element)))*sp.nan
+            temp = dict.__getitem__(self,propname)
             for item in proplist:
                 temp[item.keywords[locations]] = item()
         else:
             temp = dict.__getitem__(self,propname)
         return temp
+        
+    def add_method(self,model,propname,static=False,**kwargs):
+        r'''
+        '''
+        element = propname.split('.')[0]
+        if element == 'pore':
+            locations = 'pores'
+        elif element == 'throat':
+            locations = 'throats'
+        fn = partial(model,network=self,**kwargs)
+        if static:
+            if propname not in self.keys():
+                self[propname] = sp.ones((self.count(element),))*sp.nan
+            self[propname][fn.keywords[locations]] = fn()
+        else:
+            try:
+                proplist = getattr(self,'_'+propname.replace('.','_'))
+                proplist.append(fn)
+            except:
+                proplist = []
+                proplist.append(fn)
+            setattr(self,'_'+propname.replace('.','_'),proplist)
+            if propname not in self.keys():
+                self[propname] = sp.ones((self.count(element),))*sp.nan
     
     #--------------------------------------------------------------------------
     '''Setter and Getter Methods'''
