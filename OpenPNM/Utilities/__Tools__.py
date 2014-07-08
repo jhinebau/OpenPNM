@@ -35,6 +35,7 @@ class Tools(Base,dict):
         is to limit what type and shape of data can be written to protect
         the integrity of the network.
         '''
+        print('Setting '+key+' from Tools')
         element = key.split('.')[0]
         if type(value) == int:
             value = [value]
@@ -86,8 +87,8 @@ class Tools(Base,dict):
                         else:
                             self._logger.error('Cannot overwrite '+key+' with an array of the wrong length')
     
-    def __getitem__(self,key):
-        return super(Base, self).__getitem__(key)
+#    def __getitem__(self,key):
+#        return super(Base, self).__getitem__(key)
 #        try:
 #            return super(Base, self).__getitem__(key)
 #        except:
@@ -95,6 +96,21 @@ class Tools(Base,dict):
 #            super(Base, self).__setitem__(key,sp.ones(self.count(key.split('.')[0]))*sp.nan)
 #            temp = super(Base, self).__getitem__(key)
 #        return temp
+    
+    def __getitem__(self,propname):
+        if hasattr(self,'_'+propname.replace('.','_')):
+            proplist = getattr(self,'_'+propname.replace('.','_'))
+            if propname in self.keys():
+                #See if a dict item already exists
+                temp = dict.__getitem__(self,propname)
+            else:
+                #If not, create a temp array
+                temp = sp.ones((self.count(propname.split('.')[0])))*sp.nan
+            for item in proplist:
+                temp[item.keywords['pores']] = item()
+        else:
+            temp = dict.__getitem__(self,propname)
+        return temp
     
     #--------------------------------------------------------------------------
     '''Setter and Getter Methods'''
