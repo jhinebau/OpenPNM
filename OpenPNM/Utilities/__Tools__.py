@@ -99,15 +99,20 @@ class Tools(Base,dict):
     
     def __getitem__(self,propname):
         if hasattr(self,'_'+propname.replace('.','_')):
+            element = propname.split('.')[0]
+            if element == 'pore':
+                locations = 'pores'
+            elif element == 'throat':
+                locations = 'throats'
             proplist = getattr(self,'_'+propname.replace('.','_'))
             if propname in self.keys():
                 #See if a dict item already exists
                 temp = dict.__getitem__(self,propname)
             else:
                 #If not, create a temp array
-                temp = sp.ones((self.count(propname.split('.')[0])))*sp.nan
+                temp = sp.ones((self.count(element)))*sp.nan
             for item in proplist:
-                temp[item.keywords['pores']] = item()
+                temp[item.keywords[locations]] = item()
         else:
             temp = dict.__getitem__(self,propname)
         return temp
