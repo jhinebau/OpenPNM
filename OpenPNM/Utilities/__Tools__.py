@@ -111,6 +111,38 @@ class Tools(Base,dict):
         else:
             temp = dict.__getitem__(self,propname)
         return temp
+        
+    def add_method(self,model,propname,static=False,**kwargs):
+        r'''
+        '''
+        #Determine element and locations
+        element = propname.split('.')[0]
+        if element == 'pore':
+            locations = 'pores'
+        elif element == 'throat':
+            locations = 'throats'
+        #Determine who is calling this method (Network or Fluid)
+        if ('network' or 'fluid') not in kwargs.keys():
+            if self.__module__.split('.')[1] == 'Network':
+                fn = partial(model,network=self,**kwargs)
+            elif self.__module__.split('.')[1] == 'Fluids':
+                fn = partial(model,fluid=self,pores=self.pores(),throats=self.throats(),**kwargs)
+        else:
+            fn = partial(model,**kwargs)
+        if static:
+            if propname not in self.keys():
+                self[propname] = sp.ones((self.count(element),))*sp.nan
+            self[propname][fn.keywords[locations]] = fn()
+        else:
+            try:
+                proplist = getattr(self,'_'+propname.replace('.','_'))
+                proplist.append(fn)
+            except:
+                proplist = []
+                proplist.append(fn)
+            setattr(self,'_'+propname.replace('.','_'),proplist)
+            if propname not in self.keys():
+                self[propname] = sp.ones((self.count(element),))*sp.nan
     
     #--------------------------------------------------------------------------
     '''Setter and Getter Methods'''

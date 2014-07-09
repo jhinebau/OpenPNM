@@ -1073,31 +1073,6 @@ class GenericNetwork(OpenPNM.Utilities.Tools):
             for i in sp.unique(Cs):
                 health.disconnected_clusters.append(sp.where(Cs==i)[0])
         return health
-                
-    def add_method(self,model,propname,static=False,**kwargs):
-        r'''
-        '''
-        element = propname.split('.')[0]
-        if element == 'pore':
-            locations = 'pores'
-        elif element == 'throat':
-            locations = 'throats'
-        fn = partial(model,network=self,**kwargs)
-        if static:
-            if propname not in self.keys():
-                self[propname] = sp.ones((self.count(element),))*sp.nan
-            self[propname][fn.keywords[locations]] = fn()
-        else:
-            try:
-                proplist = getattr(self,'_'+propname.replace('.','_'))
-                proplist.append(fn)
-            except:
-                proplist = []
-                proplist.append(fn)
-            setattr(self,'_'+propname.replace('.','_'),proplist)
-            if propname not in self.keys():
-                self[propname] = sp.ones((self.count(element),))*sp.nan
-            
             
 #------------------------------------------------------------------------------
 '''Additional Functions'''

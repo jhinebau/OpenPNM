@@ -6,7 +6,7 @@ def Toray090(network,pores,throats):
     """
     network.add_method(propname='pore.seed',
                        pores=pores,
-                       static=True,
+                       static=False,
                        model=gm.pore_seed.random,
                        seed=None)
     network.add_method(propname='throat.seed',
@@ -42,7 +42,6 @@ def Toray090(network,pores,throats):
                        throats=throats,
                        static=True,
                        model=gm.throat_volume.cylinder)
-                       
                        
                        
 

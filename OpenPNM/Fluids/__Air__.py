@@ -33,19 +33,19 @@ class Air(GenericFluid):
         self['pore.Tc'] = 132.65
         self['pore.Pc'] = 3.771e6
         self['pore.MW'] = 0.0291
-        self.add_method(model=OpenPNM.Fluids.models.diffusivity.Fuller,
-                        propname='pore.diffusivity',
+        self.add_method(propname='pore.diffusivity',
+                        model=OpenPNM.Fluids.models.diffusivity.Fuller,
                         static=False,
                         MA=0.03199,
                         MB=0.0291,
                         vA=16.3,
                         vB=19.7)
-        self.add_method(model=OpenPNM.Fluids.models.misc.constant,
-                        propname='pore.viscosity',
+        self.add_method(propname='pore.viscosity',
+                        model=OpenPNM.Fluids.models.misc.constant,
                         static=True,
                         value=1.75e-5)
-        self.add_method(model=OpenPNM.Fluids.models.molar_density.ideal_gas,
-                        propname='pore.molar_density',
+        self.add_method(propname='pore.molar_density',
+                        model=OpenPNM.Fluids.models.molar_density.ideal_gas,
                         static=False,
                         R=8.314)
 

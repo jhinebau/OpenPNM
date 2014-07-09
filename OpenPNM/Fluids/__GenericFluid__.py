@@ -47,31 +47,7 @@ class GenericFluid(OpenPNM.Utilities.Tools):
         # Initialize label 'all' in the object's own info dictionaries
         self['pore.all'] = network['pore.all']
         self['throat.all'] = network['throat.all']
-
-
-    def add_method(self,model,propname,static=False,**kwargs):
-        r'''
-        '''
-        element = propname.split('.')[0]
-        if element == 'pore':
-            locations = 'pores'
-        elif element == 'throat':
-            locations = 'throats'
-        fn = partial(model,fluid=self,pores=self.pores(),**kwargs)
-        if static:
-            if propname not in self.keys():
-                self[propname] = sp.ones((self.count(element),))*sp.nan
-            self[propname][fn.keywords[locations]] = fn()
-        else:
-            try:
-                proplist = getattr(self,'_'+propname.replace('.','_'))
-                proplist.append(fn)
-            except:
-                proplist = []
-                proplist.append(fn)
-            setattr(self,'_'+propname.replace('.','_'),proplist)
-            if propname not in self.keys():
-                self[propname] = sp.ones((self.count(element),))*sp.nan
+        
 
 if __name__ =="__main__":
     pn = OpenPNM.Network.TestNet()
