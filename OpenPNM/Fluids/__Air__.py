@@ -27,15 +27,28 @@ class Air(GenericFluid):
     def __init__(self,name=None,**kwargs):
         super(Air,self).__init__(name=name,**kwargs)
         self._logger.debug("Construct class")
-        self.set_pore_data(prop='Tc',data=132.65)
-        self.set_pore_data(prop='Pc',data=3.771e6)
-        self.set_pore_data(prop='MW',data=0.0291)
-        self.add_property(prop='diffusivity',model='Fuller',MA=0.03199,MB=0.0291,vA=16.3,vB=19.7)
-        self.add_property(prop='viscosity',model='constant',value=1.9e-5)
-        self.add_property(prop='molar_density',model='ideal_gas',R=8.314)
-        self.add_property(prop='surface_tension',model='constant',value=0.072)
-        self.add_property(prop='contact_angle',model='constant',value=70)
-        self.regenerate()
+        # Set default T and P since most propery models require it
+        self['pore.temperature'] = 298.0
+        self['pore.pressure'] = 101325.0
+        self['pore.Tc'] = 132.65
+        self['pore.Pc'] = 3.771e6
+        self['pore.MW'] = 0.0291
+        self.add_method(model=OpenPNM.Fluids.models.diffusivity.Fuller,
+                        propname='pore.diffusivity',
+                        static=False,
+                        MA=0.03199,
+                        MB=0.0291,
+                        vA=16.3,
+                        vB=19.7)
+        self.add_method(model=OpenPNM.Fluids.models.misc.constant,
+                        propname='pore.viscosity',
+                        static=True,
+                        value=1.75e-5)
+        self.add_method(model=OpenPNM.Fluids.models.molar_density.ideal_gas,
+                        propname='pore.molar_density',
+                        static=False,
+                        R=8.314)
+
 
 if __name__ =="__main__":
     pn = OpenPNM.Network.TestNet()

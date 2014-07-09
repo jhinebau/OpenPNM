@@ -9,42 +9,18 @@ Some text here?
 
 import scipy as sp
 
-def constant(fluid,network,propname,value,**params):
-    r"""
-    Assigns specified constant value
-    """
-    fluid.set_pore_data(prop=propname,data=value)
-
-def na(fluid,network,propname,**params):
-    r"""
-    Assigns nonsensical, but numerical value of -1.  
-    This ensurse stability of other methods 
-    but introduces the possibility of being misused.
-    """
-    value = -1
-    fluid.set_pore_data(prop=propname,data=value)
-
-def empirical(fluid,network,propname,a=[0],**params):
-    r"""
-    Uses a polynomial fit of empirical data to calculate property
-    """
-    T = fluid.get_pore_data(prop='temperature')
-    value = sp.zeros_like(T)
-    for i in range(0,sp.size(a)):
-        value = value + a[i]*(T**i)
-    fluid.set_pore_data(prop=propname,data=value)
-
-def Eotvos(fluid,network,propname,k,molar_density='molar_density', **params):
+def Eotvos(fluid,**kwargs):
     r'''
     Documentation for this method is being updated, we are sorry for the inconvenience.
     '''
-    Tc = fluid.get_pore_data(prop='Tc')
-    T = fluid.get_pore_data(prop='temperature')
-    Vm = 1/fluid.get_pore_data(prop=molar_density)
-    value = k*(Tc-T)/(Vm**(2/3))
-    fluid.set_pore_data(prop=propname,data=value)
+    k = 2.1e-7  # The Eotvos constant
+    Tc = fluid['pore.Tc']
+    T = fluid['pore.temperature']
+    Vm = 1/fluid['pore.molar_density']
+    value = k*(Tc-6-T)/(Vm**(2/3))
+    return value
 
-def GuggenheimKatayama(fluid,network,propname,K2,n,**params):
+def GuggenheimKatayama(fluid,network,propname,K2,n,**kwargs):
     r'''
     Documentation for this method is being updated, we are sorry for the inconvenience.
     '''
@@ -55,7 +31,7 @@ def GuggenheimKatayama(fluid,network,propname,K2,n,**params):
     value = sigma_o*(1-T/Tc)**n
     fluid.set_pore_data(prop=propname,data=value)
 
-def BrockBird_scaling(fluid,network,propname,sigma_o,To,**params):
+def BrockBird_scaling(fluid,network,propname,sigma_o,To,**kwargs):
     r"""
     Uses Brock_Bird model to adjust surface tension from it's value at a given reference temperature to temperature of interest
 

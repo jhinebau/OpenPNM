@@ -8,22 +8,7 @@ Models for predicting fluid viscosity
 """
 import scipy as sp
 
-def constant(fluid,network,propname,value,**params):
-    r"""
-    Assigns specified constant value
-    """
-    fluid.set_pore_data(prop=propname,data=value)
-
-def na(fluid,network,propname,**params):
-    r"""
-    Assigns nonsensical, but numerical value of -1.
-    This ensurse stability of other methods 
-    but introduces the possibility of being misused. 
-    """
-    value = -1
-    fluid.set_pore_data(prop=propname,data=value)
-
-def Reynolds(fluid,network,propname,uo,b,**params):
+def Reynolds(fluid,uo,b,**kwargs):
     r"""
     Uses Reynolds method for the temperature dependance of shear viscosity
 
@@ -33,11 +18,11 @@ def Reynolds(fluid,network,propname,uo,b,**params):
             Coefficients of Reynolds method
 
     """
-    T = fluid.get_pore_data(prop='temperature')
+    T = fluid['pore.temperature']
     value = uo*sp.exp(-1*b*T)
-    fluid.set_pore_data(prop=propname,data=value)
+    return value
 
-def Chung(fluid,network,propname,Vc,MW,acentric,kappa,dipole,**params):
+def Chung(fluid,Vc,MW,acentric,kappa,dipole,**kwargs):
     r"""
     Uses Chung et al. model to estimate viscosity for gases with low pressure(not near the critical pressure) from first principles at conditions of interest
 
@@ -55,8 +40,8 @@ def Chung(fluid,network,propname,Vc,MW,acentric,kappa,dipole,**params):
         Dipole moment (C.m)
 
     """
-    T = fluid.get_pore_data(prop='temperature')
-    Tc = fluid.get_pore_data(prop = 'Tc')
+    T = fluid['pore.temperature']
+    Tc = fluid['pore.Tc']
     Tr= T/Tc
     Tstar = 1.2593*Tr
     A = 1.161415
@@ -69,5 +54,5 @@ def Chung(fluid,network,propname,Vc,MW,acentric,kappa,dipole,**params):
     dipole_r = 131.3*(dipole*2.997e29)/((Vc*1e6)*Tc)**0.5
     f = 1-0.2756*acentric + 0.059035*(dipole_r**4) + kappa
     value = 40.785*f*(MW*1e3*T)**0.5/((Vc*1e6)**(2/3)*sigma)*1e-7
-    fluid.set_pore_data(prop=propname,data=value)
+    return value
 

@@ -39,7 +39,7 @@ class Tools(Base,dict):
         element = key.split('.')[0]
         if type(value) == int:
             value = [value]
-        value = sp.array(value,ndmin=0)
+        value = sp.array(value,ndmin=1)
         if (element != 'pore') and (element != 'throat'):
             self._logger.error('Array name must begin with \'pore\' or \'throat\'')
             return
@@ -111,30 +111,6 @@ class Tools(Base,dict):
         else:
             temp = dict.__getitem__(self,propname)
         return temp
-        
-    def add_method(self,model,propname,static=False,**kwargs):
-        r'''
-        '''
-        element = propname.split('.')[0]
-        if element == 'pore':
-            locations = 'pores'
-        elif element == 'throat':
-            locations = 'throats'
-        fn = partial(model,network=self,**kwargs)
-        if static:
-            if propname not in self.keys():
-                self[propname] = sp.ones((self.count(element),))*sp.nan
-            self[propname][fn.keywords[locations]] = fn()
-        else:
-            try:
-                proplist = getattr(self,'_'+propname.replace('.','_'))
-                proplist.append(fn)
-            except:
-                proplist = []
-                proplist.append(fn)
-            setattr(self,'_'+propname.replace('.','_'),proplist)
-            if propname not in self.keys():
-                self[propname] = sp.ones((self.count(element),))*sp.nan
     
     #--------------------------------------------------------------------------
     '''Setter and Getter Methods'''

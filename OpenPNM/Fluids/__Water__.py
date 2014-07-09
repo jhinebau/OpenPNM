@@ -27,15 +27,32 @@ class Water(GenericFluid):
     def __init__(self,name=None,**kwargs):
         super(Water,self).__init__(name=name,**kwargs)
         self._logger.debug("Construct class")
-        self.set_pore_data(prop='Tc',data=647.096)
-        self.set_pore_data(prop='Pc',data=22.06e6)
-        self.set_pore_data(prop='MW',data=0.0291)
-        self.add_property(prop='diffusivity',model='constant',value=2e-9)
-        self.add_property(prop='viscosity',model='constant',value=0.001)
-        self.add_property(prop='molar_density',model='constant',value=44445)
-        self.add_property(prop='surface_tension',model='constant',value=0.072)
-        self.add_property(prop='contact_angle',model='constant',value=110)
-        self.regenerate()
+        # Set default T and P since most propery models require it
+        self['pore.temperature'] = 298.0
+        self['pore.pressure'] = 101325.0
+        self['pore.Tc'] = 647.096
+        self['pore.Pc'] = 22.06e6
+        self['pore.MW'] = 0.0180
+        self.add_method(model=OpenPNM.Fluids.models.misc.constant,
+                        propname='pore.diffusivity',
+                        static=True,
+                        value=2e-9)
+        self.add_method(model=OpenPNM.Fluids.models.misc.constant,
+                        propname='pore.viscosity',
+                        static=True,
+                        value=0.001)
+        self.add_method(model=OpenPNM.Fluids.models.misc.constant,
+                        propname='pore.molar_density',
+                        static=True,
+                        R=44445)
+        self.add_method(model=OpenPNM.Fluids.models.misc.constant,
+                        propname='pore.surface_tension',
+                        static=True,
+                        R=0.072)
+        self.add_method(model=OpenPNM.Fluids.models.misc.constant,
+                        propname='pore.contact_angle',
+                        static=True,
+                        R=110)
 
 if __name__ =="__main__":
     pn = OpenPNM.Network.TestNet()

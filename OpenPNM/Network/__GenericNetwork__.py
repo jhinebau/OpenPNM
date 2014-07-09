@@ -17,6 +17,7 @@ import scipy as sp
 import scipy.sparse as sprs
 import scipy.spatial as sptl
 import scipy.signal as spsg
+from functools import partial
 
 
 class GenericNetwork(OpenPNM.Utilities.Tools):
@@ -1073,35 +1074,29 @@ class GenericNetwork(OpenPNM.Utilities.Tools):
                 health.disconnected_clusters.append(sp.where(Cs==i)[0])
         return health
                 
-        
-#    def __getitem__(self,propname):
-#        try:
-#            proplist = getattr(self,'_'+propname.replace('.','_'))
-#            temp = dict.__getitem__(self,propname)
-#            for item in proplist:
-#                temp[item.keywords['pores']] = item()
-#        except:
-#            temp = dict.__getitem__(self,propname)
-#        return temp
-            
-            
-#        temp = super(GenericNetwork,self).__getitem__(self,propname)
-#        temp = dict.__getitem__(self,propname)
-#        if temp.__class__.__name__ == 'partial':
-#            array = sp.ones((self.Np,))*sp.nan
-#            array[temp.keywords['pores']] = temp()
-#            return array
-#        else:
-#            return temp
-            
-#    def __setitem__(self,key,value):
-#        if value.__class__.__name__ == 'ndarray':
-#            #Use the 'self protecting dictionary' setting in Tools
-#            super(GenericNetwork,self).__setitem__(key,value)
-#        else:
-#            #Bypass the Tools setter
-#            print('Setting '+key+' from Generic Network')
-#            dict.__setitem__(self,key,value)
+    def add_method(self,model,propname,static=False,**kwargs):
+        r'''
+        '''
+        element = propname.split('.')[0]
+        if element == 'pore':
+            locations = 'pores'
+        elif element == 'throat':
+            locations = 'throats'
+        fn = partial(model,network=self,**kwargs)
+        if static:
+            if propname not in self.keys():
+                self[propname] = sp.ones((self.count(element),))*sp.nan
+            self[propname][fn.keywords[locations]] = fn()
+        else:
+            try:
+                proplist = getattr(self,'_'+propname.replace('.','_'))
+                proplist.append(fn)
+            except:
+                proplist = []
+                proplist.append(fn)
+            setattr(self,'_'+propname.replace('.','_'),proplist)
+            if propname not in self.keys():
+                self[propname] = sp.ones((self.count(element),))*sp.nan
             
             
 #------------------------------------------------------------------------------
