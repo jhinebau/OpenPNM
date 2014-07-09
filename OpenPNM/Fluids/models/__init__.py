@@ -1,15 +1,19 @@
 r"""
 *******************************************************************************
-:mod:`OpenPNM.Geometry` -- Classes related to the creation of pore and throat geometry
+:mod:`OpenPNM.Fluids.models` -- Functions related to the creation of thermophysical fluid properties
 *******************************************************************************
 
-.. module:: OpenPNM.Geometry
+.. module:: OpenPNM.Fluids
 
 Contents
 --------
-Contains methods for applying pore and throat geometry
 
-  
+
+Classes
+-------
+    
+
+   
 """
 #Import every file in the directory, including both classes and methods
 #import os,sys
@@ -22,10 +26,16 @@ Contains methods for applying pore and throat geometry
 #            exec('from .' + item.split('.')[0] + ' import ' + item.split('__')[1])
 #        else:
 #            exec('from . import ' + format(item.split('.')[0]))
-        
 
-from . import models
-from . import GDL
-from . import Boundary
-from . import Generic
-from . import Sandstone
+#Pore models        
+from . import contact_angle
+from . import diffusivity
+from . import electrical_conductivity
+from . import molar_density
+from . import molar_mass
+from . import surface_tension
+from . import thermal_conductivity
+from . import vapor_pressure
+from . import viscosity
+from . import misc
+

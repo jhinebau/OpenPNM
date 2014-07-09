@@ -2,12 +2,13 @@ r"""
 ===============================================================================
 Submodule -- throat_length
 ===============================================================================
+The functions in this module provide ways to calculate throat lengths
 
 """
 import scipy as sp
 
 
-def straight(throats,network):
+def straight(network,throats):
     r"""
     Calculate throat length 
     """

@@ -9,7 +9,11 @@ Contents
 --------
 Contains methods for applying pore and throat geometry
 
-  
+Classes
+-------
+    
+
+   
 """
 #Import every file in the directory, including both classes and methods
 #import os,sys
@@ -22,10 +26,18 @@ Contains methods for applying pore and throat geometry
 #            exec('from .' + item.split('.')[0] + ' import ' + item.split('__')[1])
 #        else:
 #            exec('from . import ' + format(item.split('.')[0]))
-        
 
-from . import models
-from . import GDL
-from . import Boundary
-from . import Generic
-from . import Sandstone
+#Pore models        
+from . import pore_misc
+from . import pore_diameter
+from . import pore_seed
+from . import pore_volume
+#Throat models
+from . import throat_misc
+from . import throat_diameter
+from . import throat_length
+from . import throat_seed
+from . import throat_volume
+from . import throat_vector
+from . import throat_area
+from . import throat_surface_area
