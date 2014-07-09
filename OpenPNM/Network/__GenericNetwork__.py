@@ -1077,8 +1077,9 @@ class GenericNetwork(OpenPNM.Utilities.Tools):
 #------------------------------------------------------------------------------
 '''Additional Functions'''
 #------------------------------------------------------------------------------
-# These functions are not automatically attached to the network, but can be
-# using object.method_name = types.MethodType(method_name, object)
+# These functions are not automatically attached to the network.
+# To attach these methods such that their 'self' refers to the host object, use:
+# object.method_name = types.MethodType(method_name, object)
   
 def subset_fluid(self,fluid):
     r'''
