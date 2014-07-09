@@ -7,14 +7,14 @@ Miscillaneous and generic methods for pores
 import scipy as _sp
 
 
-def constant(network,pores,value=0):
+def constant(network,pores,value=0,**kwargs):
     r"""
     Assign specified number to pores
     """
     values = _sp.ones(_sp.shape(pores)[0])*value
     return values
 
-def random(network,pores,seed=None):
+def random(network,pores,seed=None,**kwargs2):
     r"""
     Assign random number to pores
     """

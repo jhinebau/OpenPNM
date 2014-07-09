@@ -6,7 +6,7 @@ Submodule -- pore_volume
 """
 import scipy as sp
 
-def sphere(network,pores):
+def sphere(network,pores,**kwargs):
     r"""
     Calculate pore volume from diameter for a spherical pore body
     """

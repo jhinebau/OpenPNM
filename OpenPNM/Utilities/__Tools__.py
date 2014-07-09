@@ -122,13 +122,20 @@ class Tools(Base,dict):
         elif element == 'throat':
             locations = 'throats'
         #Determine who is calling this method (Network or Fluid)
-        if ('network' or 'fluid') not in kwargs.keys():
-            if self.__module__.split('.')[1] == 'Network':
-                fn = partial(model,network=self,**kwargs)
-            elif self.__module__.split('.')[1] == 'Fluids':
-                fn = partial(model,fluid=self,pores=self.pores(),throats=self.throats(),**kwargs)
-        else:
-            fn = partial(model,**kwargs)
+        if self.__module__.split('.')[1] == 'Network':
+            #If caller is Network, then fluid not required and pores/throats will be given
+            kwargs['network'] = self
+            kwargs['fluid'] = None
+        elif self.__module__.split('.')[1] == 'Fluids':
+            #If caller is Fluid, then itself and and Network are needed
+            kwargs['fluid'] = self
+            kwargs['network'] = self._net
+            if ('pores' or 'throats') not in kwargs.keys():
+                #If caller does not provide pores/throats then assume all
+                kwargs['pores'] = self.pores()
+                kwargs['throats'] = self.throats()
+        #Build partial function from given and updated kwargs
+        fn = partial(model,**kwargs)
         if static:
             if propname not in self.keys():
                 self[propname] = sp.ones((self.count(element),))*sp.nan

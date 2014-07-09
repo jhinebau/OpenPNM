@@ -41,7 +41,7 @@ class GenericAlgorithm(OpenPNM.Utilities.Tools):
         super(GenericAlgorithm,self).__init__(**kwords)    
         self._logger.debug("Construct class")
         self._net = network
-        self.name = name         
+        self.name = name
 
         # Initialize label 'all' in the object's own info dictionaries
         self['pore.all'] = network['pore.all']

@@ -18,7 +18,7 @@ def Toray090(network,pores,throats):
                        pores=pores,
                        static=False,
                        model=gm.pore_diameter.sphere,
-                       psd_name='weibull_min',
+                       psd_name='weibull_max',
                        psd_shape=2.5,
                        psd_loc=5e-4,
                        psd_scale=4e-6)
@@ -26,7 +26,7 @@ def Toray090(network,pores,throats):
                        throats=throats,
                        static=True,
                        model=gm.throat_diameter.cylinder,
-                       tsd_name='weibull_min',
+                       tsd_name='weibull_max',
                        tsd_shape=2.5,
                        tsd_loc=5e-4,
                        tsd_scale=4e-6)

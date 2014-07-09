@@ -9,7 +9,7 @@ import scipy.stats as spst
 
 
 
-def cylinder(network,throats,tsd_name='weibull_max',tsd_shape=1,tsd_loc=1,tsd_scale=1,pdf=None):
+def cylinder(network,throats,tsd_name='weibull_max',tsd_shape=1,tsd_loc=1,tsd_scale=1,pdf=None,**kwargs):
     r"""
     Calculate throat diameter from seeds for a cylindrical throat
     """

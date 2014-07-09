@@ -6,14 +6,14 @@ Submodule -- throat_seeds
 """
 import scipy as _sp
 
-def constant(network,throats,value=0):
+def constant(network,throats,value=0,**kwargs):
     r"""
     Assign specified number to throat for later use in throat size distributions
     """
     pore_seeds = _sp.ones(_sp.shape(pores)[0])*value
     return pore_seeds
 
-def neighbor(network,throats,mode='min'):
+def neighbor(network,throats,mode='min',**kwargs):
     r"""
     Adopt the seed value from neighboring pores
     

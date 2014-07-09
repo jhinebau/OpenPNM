@@ -9,7 +9,7 @@ import scipy.stats as spst
 
 
 
-def cylinder(throat_diameter):
+def cylinder(throat_diameter,**kwargs):
     r"""
     Calculate throat area for a cylindrical throat
     """

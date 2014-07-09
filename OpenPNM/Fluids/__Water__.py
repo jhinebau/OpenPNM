@@ -44,15 +44,15 @@ class Water(GenericFluid):
         self.add_method(model=OpenPNM.Fluids.models.misc.constant,
                         propname='pore.molar_density',
                         static=True,
-                        R=44445)
+                        value=44445)
         self.add_method(model=OpenPNM.Fluids.models.misc.constant,
                         propname='pore.surface_tension',
                         static=True,
-                        R=0.072)
+                        value=0.072)
         self.add_method(model=OpenPNM.Fluids.models.misc.constant,
                         propname='pore.contact_angle',
                         static=True,
-                        R=110)
+                        value=110)
 
 if __name__ =="__main__":
     pn = OpenPNM.Network.TestNet()

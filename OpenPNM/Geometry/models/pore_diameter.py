@@ -8,7 +8,7 @@ import scipy as _sp
 import scipy.stats as _spst
 
 
-def sphere(network,pores,psd_name='weibull_max',psd_shape=1,psd_loc=1,psd_scale=1,pdf=None):
+def sphere(network,pores,psd_name='weibull_max',psd_shape=1,psd_loc=1,psd_scale=1,pdf=None,**kwargs):
     r"""
     Calculate pore diameter from seed values for a spherical pore body
     """

@@ -8,7 +8,7 @@ The functions in this module provide ways to calculate throat lengths
 import scipy as sp
 
 
-def straight(network,throats):
+def straight(network,throats,**kwargs):
     r"""
     Calculate throat length 
     """
