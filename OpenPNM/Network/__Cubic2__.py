@@ -174,6 +174,9 @@ class Cubic2(GenericNetwork):
         conns = sp.vstack((tpore1,tpore2)).T
         self.extend(throat_conns=conns)
         
+        #Trim duplicate throats
+        self.find_duplicates(element='throat',mode='remove')
+        
         self._logger.debug(sys._getframe().f_code.co_name+": End of method")
         
     def _add_labels(self):

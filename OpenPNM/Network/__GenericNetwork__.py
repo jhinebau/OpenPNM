@@ -862,6 +862,18 @@ class GenericNetwork(OpenPNM.Utilities.Tools):
         return clusters
         
     def network_health(self):
+        r'''
+        Checks the network for:
+        
+        1. Isolated pores
+        2. Clusters of disconnected pores
+        3. Duplicate pores
+        4. Duplicate throats
+        
+        Returns
+        -------
+        A named tuple
+        '''
         #Check for individual isolated pores
         health = collections.namedtuple('network_health',['disconnected_clusters','isolated_pores'])
         health.isolated_pores = []
@@ -877,7 +889,51 @@ class GenericNetwork(OpenPNM.Utilities.Tools):
             for i in sp.unique(Cs):
                 health.disconnected_clusters.append(sp.where(Cs==i)[0])
         return health
-
+        
+        
+    def find_duplicates(self,element='throat',mode='remove'):
+        r'''
+        Find duplicate pores or throats in the network
+        
+        Parameters
+        ----------
+        element : string
+            Controls whethe to search for duplicate 'pore' or 'throat'
+        '''
+        if (self._geometries != []):
+            raise Exception('Network has active Geometries, cannot proceed')
+                    
+        if element[0] == 't':
+            i = self['throat.conns'][:,0]
+            j = self['throat.conns'][:,1]
+            v = sp.array(self['throat.all'],dtype=int)
+            Np = self.num_pores()
+            temp = sprs.coo_matrix((v,(i,j)),[Np,Np])
+            temp = temp.tocsr()  # Convert to CSR to combine duplicates
+            temp = temp.tocoo()  # And back to COO
+            if mode == 'find':
+                mergedTs = sp.where(temp.data>1)
+                Ps12 = sp.vstack((temp.row[mergedTs], temp.col[mergedTs])).T
+                dupTs = []
+                for i in range(0,sp.shape(Ps12)[0]):
+                    dupTs.append(self.find_connecting_throat(Ps12[i,0],Ps12[i,1]))
+                return dupTs
+            elif mode == 'remove':
+                self['throat.conns'] = sp.vstack((temp.row,temp.col)).T
+                dict.__setitem__(self,'throat.all',sp.array(temp.data,dtype=bool))
+        if element[0] == 'p':
+            temp = misc.dist(self['pore.coords'],self['pore.coords'])
+            temp = sp.triu(temp,k=1)  # Remove lower triangular of matrix
+            temp = sp.where(temp==0)  # Find 0 values in distance matrix
+            dupPs = temp[1]>temp[0]  # Find 0 values above diagonal
+            if mode == 'find':
+                return dupPs
+            if mode == 'remove':
+                print('not implemented yet')
+                pass
+        
+        
+        
 if __name__ == '__main__':
     #Run doc tests
     import doctest
