@@ -34,8 +34,8 @@ class Toray090(GenericGeometry):
    
         self.add_property(prop='pore_seed',model='random')
         self.add_property(prop='throat_seed',model='neighbor_min')
-        self.add_property(prop='pore_diameter',model='sphere',name='weibull_min',shape=2.5,loc=5e-6,scale=4e-6)
-        self.add_property(prop='throat_diameter',model='cylinder',name='weibull_min',shape=2.5,loc=5e-6,scale=4e-6)
+        self.add_property(prop='pore_diameter',model='sphere',name='weibull_min',shape=2.5,loc=55e-6,scale=4e-6)
+        self.add_property(prop='throat_diameter',model='cylinder',name='weibull_min',shape=2.5,loc=55e-6,scale=4e-6)
         self.add_property(prop='pore_volume',model='sphere')
         self.add_property(prop='throat_length',model='straight')
         self.add_property(prop='throat_volume',model='cylinder')

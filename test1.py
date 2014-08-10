@@ -9,8 +9,8 @@ import OpenPNM.Utilities.misc as misc
 pn = OpenPNM.Network.Cubic(name='Cell',loglevel=20)
 
 Lc = sp.array([0.00005])
-x = 25
-y = 25
+x = 30
+y = 30
 z = 5
 
 pn.generate(divisions = [x, y, z], lattice_spacing = Lc,add_boundaries=True)
